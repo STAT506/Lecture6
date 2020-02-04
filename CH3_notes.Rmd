@@ -1,0 +1,284 @@
+---
+title: "Lecture 6: Gelman Hill Ch 3"
+output:
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(show.signif.stars = FALSE)
+library(tidyverse) 
+library(arm)
+```
+
+
+## Linear Regression
+
+"Linear regression summarizes how the average value of a numerical _outcome_ variable vary over subpopulations defined by linear functions of _predictors_... By focusing on regression as a comparison of averages, we (GH) are being explicit about its limitations for defining these relationships casually... Regression can be used to predict an outcome given a linear function of these predictors, and regression coefficients can be thought of as comparisons across predicted values or as comparisons among averages in the data."
+
+\vfill
+
+Consider a dataset consisting of the volume of beer consumed in Sao Paulo, Brazil. For more information about the data, see [https://www.kaggle.com/dongeorge/beer-consumption-sao-paulo](https://www.kaggle.com/dongeorge/beer-consumption-sao-paulo). We will work on a cleaned dataset that contains:
+
+- consumed: daily volume of beer consumed in liters
+- precip: daily precipitation in (mm)
+- max_tmp: daily maximum temperature in C
+- weekend: indicator variable for if the day is a weekend.
+
+\vfill
+
+It is not obvious how the data was collected, but here is a note from the data provider: "The data (sample) were collected in São Paulo, Brazil, in a university area, where there are some parties with groups of students from 18 to 28 years of age (average)."
+
+```{r}
+library(readr)
+library(dplyr)
+beer <- read_csv('http://math.montana.edu/ahoegh/Data/Brazil_cerveja.csv')
+beer
+```
+
+\newpage
+
+### One predictor
+
+\vfill
+
+\vfill
+\vfill
+
+
+
+```{r}
+beer <- beer %>% mutate(weekend = as.factor(weekend))
+lm_weekend <- lm(consumed ~ weekend, data = beer)
+display(lm_weekend)
+```
+
+\vfill
+
+
+\vfill
+
+
+
+
+\newpage
+
+```{r, warning = F, message=F}
+library(ggplot2)
+library(gridExtra)
+fig1 <- beer %>% ggplot(aes(y = consumed, x = weekend)) +
+  geom_jitter(width = .25) + ylab('liters of cerveja consumed') + 
+  xlab('weekend (1 indicates weekend)') + ggtitle('Cerveja consumed vs. weekend')
+
+fig2 <- beer %>% ggplot(aes(y = consumed, x = weekend)) +
+  geom_jitter(width = .25) + ylab('liters of cerveja consumed') + 
+  xlab('weekend (1 indicates weekend)') + ggtitle('Cerveja consumed vs. weekend') + 
+  ylim(0, max(beer$consumed)+1)
+grid.arrange(fig1, fig2)
+```
+\vfill
+Which graph is preferable? Why?
+
+\vfill
+
+\vfill
+\vfill
+
+\newpage
+
+```{r}
+lm_temp <- lm(consumed ~ max_tmp, data = beer)
+display(lm_temp)
+```
+
+\vfill
+
+Interpret the coefficients in this model.
+
+- $\beta_0:$ 
+\vfill
+- $\beta_1:$ 
+\vfill
+
+```{r}
+beer %>% ggplot(aes(y = consumed, x = max_tmp)) +
+  geom_jitter(width = .25, alpha = .5) + ylab('liters of cerveja consumed') + 
+  xlab('Maximum Temperature (Celsius)') + ggtitle('Cerveja consumed vs. Maximum Temperature') + 
+  ylim(0, max(beer$consumed)+1) + geom_smooth(method ='lm')
+```
+
+\newpage
+
+### Multiple Regression
+
+As more variables are introduced in a linear model, the intepretation becomes more complicated. Specifically, for any coefficient, the intepretation is 
+
+\vfill
+
+For instance, write out a model for the mean beer consumed as a function of maximum temperature and whether the day is a weekend. Then interpret each coefficient.
+
+\vfill
+\vfill
+
+\vfill
+\vfill
+\vfill
+
+\newpage
+
+```{r}
+lm_multi <- lm(consumed ~ max_tmp + weekend, data = beer)
+display(lm_multi)
+```
+
+\vfill
+
+```{r}
+beer %>% ggplot(aes(y = consumed, x = max_tmp, color = weekend)) +
+  geom_jitter(width = .25, alpha = .5) + ylab('liters of cerveja consumed') + 
+  xlab('Maximum Temperature (Celsius)') + ggtitle('Cerveja consumed vs. Maximum Temperature') + 
+  ylim(0, max(beer$consumed)+1) + geom_smooth(method ='lm')
+```
+
+\newpage
+
+#### Counterfactual and Predictive Interpretations
+
+There are two ways to interpret regression coefficients.
+
+1. The _predictive interpretation_ considers how the outcome variable differs, on average, when comparing two groups of units that differ by 1 in the relevant predictor while being identical in all the other groups.
+\vfill
+2. The _counterfactual (causal) interpretation_ is expressed in terms of change within individuals, rather than comparisons between individuals. Here, the coefficient is the expected change in the outcome _caused by_ adding 1 to the relevant predictor, while leaving all the other predictors in the model unchanged.
+\vfill
+
+\vfill
+
+
+#### Interactions
+
+Now consider an interaction model and interpret the coefficients:
+
+$$consumed_i = \beta_0 + \beta_1 I_{day(i) = weekend}  + \beta_2 X_{temp,i} + \beta_3 X_{temp,i} I_{day(i) = weekend} +  \varepsilon_i$$
+\vfill
+
+- $\beta_0:$ 
+\vfill
+- $\beta_1:$ 
+\vfill
+- $\beta_2:$ 
+\vfill
+- $\beta_3:$ 
+\newpage
+
+These models (particularly when one of the variables is binary), can be written as separate model:
+
+\begin{eqnarray}
+\text{weekday:    } consumed_i &=& \beta_0  + \beta_2 X_{temp,i} + \varepsilon_i \\
+\text{weekend:    } consumed_i &=& \beta_0 + \beta_1 + \left( \beta_2 + \beta_3 \right) X_{temp,i} + \varepsilon_i 
+\end{eqnarray}
+
+\vfill
+
+```{r}
+lm_interact <- lm(consumed ~ max_tmp * weekend, data = beer)
+display(lm_interact)
+```
+
+\vfill
+
+#### Interactions 
+
+- Interactions are important and they influence how the other main effects can be intrepreted.
+\vfill
+- Interactions can occur between categorical and/or continuous variables.
+\vfill
+- The textbook mentions smoking as it relates to cancer as a variable that would have large interactions.
+\vfill
+- Centering the predictor variables makes for simpler interpretations when models include an interaction.
+\vfill
+- Interactions is a way to allow the model to be fit differently for subsets of data. This can also be acheieved with hierarchical models (for categorical variables).
+
+\newpage
+
+#### Statistical Inference
+
+Notation:
+
+- _units:_ individual data points are referred to as units. These are rows in a dataset.
+
+\vfill
+- _outcome:_ the outcome of interest 
+
+\vfill
+- _predictors_ these are the variables used to predict the outcome. 
+
+\vfill
+- A linear model can, in general, be written as:
+\begin{eqnarray}
+y_i &=& X_i \underline{\beta} + \varepsilon\\
+&=& \beta_1 X_{i1} + ... + \beta_p X_{1p} + \varepsilon_i
+\end{eqnarray}
+
+where $\varepsilon_i$ are i.i.d and $\sim N(0, \sigma^2)$ and $X_i$ is a matrix of predictors.
+\vfill
+- An equivalent way to write this model is:
+\vfill
+
+#### Estimation
+
+With the model $\underline{y} = X \underline{\beta} + \underline{\varepsilon}$, the least squares estimate minimizes the sum of squared errors (or residuals) 
+
+\vfill
+```{r, fig.width = 6, fig.height = 4, echo = F}
+beer %>% ggplot(aes(y = consumed, x = max_tmp)) +
+  geom_jitter(width = .25, alpha = .5) + ylab('liters of cerveja consumed') + 
+  xlab('Maximum Temperature (Celsius)') + ggtitle('Cerveja consumed vs. Maximum Temperature') + 
+  ylim(0, max(beer$consumed)+1) + geom_smooth(method ='lm')
+```
+
+\vfill
+\newpage
+
+The least squares fit is equivalent to the maximum likelihood when the errors are iid $N(0, \sigma^2)$.
+\vfill
+The estimates of $\hat{\beta}$ come with standard errors. Using GH's `display()` function only shows the point estimates and standard errors for each coefficient.
+\vfill
+Using the CLT (Central Limit Theorem), we can say that the coefficient estimates within 
+
+\vfill
+Variance will tend to be correlated, across predictors, and contained in the covariance matrix 
+
+\vfill
+Usually the covariance matrix is not used, except in the case of prediction.
+\vfill
+The residual standard deviation $\hat{\sigma^2}$ is defined as:
+$$\hat{\sigma} = \sqrt{\sum_{i=1}^n \frac{r_i^2}{n-k}},$$
+where the 
+\vfill
+The residual standard deviation gives a sense of the model accuracy for an individual unit. For instance, the residual standard deviation for the beer model (with maximum temperature and week day is) `r round(sqrt(sum((lm_multi$residuals)^2) /(lm_multi$df.residual)),2)`. 
+
+\vfill
+
+Another way to summarize the model fit is using $R^2$, the fraction of variance explained by the model. The "unexplained variance" is $\hat{\sigma}^2$ and the (adjusted) 
+
+\newpage
+
+#### Linear Regression Assumptions
+
+GH list the assumption in descreasing order of importance. 
+
+1. _Validity:_ "Most importantly, the data you are analyzing should map to the research question you are trying to answer... Optimally, this means that the outcome measure should accurately reflect the phenomenon of interest, the model should include all relevant predictors, and the model should generalize to the cases to which it will be applied to.
+Data used in empirical research rarely meet all (if any) of these criteria precisely. However, keeping these goals in mind can help you be precise about the types of questions you can _and cannot_ answer.
+\vfill
+
+2. __Additivity and linearity:__ "the most important mathematical assumption of the regression model is that its deterministic component is a linear function of the separate predictors: $y = \beta_1 x_1 + \beta_2 x_2 +...$
+If additivity is violated, it might make sense to transform the data or to add interactions. If linearity is violated, perhaps a predictor should be transformed or included in as a basis function."
+\vfill
+
+3. __Independence of errors:__ The simple regression model assumes the errors from the prediction line are independent... more later with multilevel models.
+
+\vfill
+4. __Equal variance of errors:__ If the variance of the regression errors are unequal, estimation is more efficiently performed using weighted least squares. However, unequal variance does not affect the predictor $X\underline{\beta}$.
+\vfill
+
+5. __Normality of errors:__ "The regression assumption that is generally _least_ important is that the errors are normally distributed. GH do _not_ recommend diagnostics of the normality of the regression residuals.
